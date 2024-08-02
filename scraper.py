@@ -53,18 +53,21 @@ def proxy_generator():
 
 def request_wrapper(url, ua, proxies):
   proxy = choice(proxies)
+  print(f'\nRandom Chosen Proxy:\n{proxy}')
   response = requests.get(url, verify=False,headers={'User-Agent': ua},proxies = proxy)
   # checking response
   if (response.status_code != 200):
     raise Exception(response.raise_for_status())
 
-  print("response returned")
+  print("Response fetched successfully")
   return response
 
-def page_scrape(url, proxies, user_ag):
+def page_scrape(url, proxies):
     global reviews  # Declare reviews as global to modify it
 
     print(f'Page URL: {url}')
+    user_ag = ua.random
+    print(f'User Agent : \n{user_ag}')
     response = request_wrapper(url, user_ag, proxies)
     soup = BeautifulSoup(response.text, "html.parser")
     rvw2 = soup.find_all("div", {"class": ["a-section", "celwidget"], "id": re.compile("^customer_review-")})
@@ -84,7 +87,10 @@ def page_scrape(url, proxies, user_ag):
 
     print(reviews)
 
-def get_total_pages(url, user_ag, proxies):
+def get_total_pages(url, proxies):
+        
+        user_ag = ua.random
+        print(f'User Agent : \n{user_ag}')
         response = request_wrapper(url, user_ag, proxies)
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -110,11 +116,9 @@ def get_total_pages(url, user_ag, proxies):
 
 def scrape(url):
     proxies = proxy_generator()
-    proxy = choice(proxies)
-    print(f"Proxies generated successfully:\n{proxies}\nRandom Chosen Proxy:\n{proxy}")
+    print(f"Proxies generated successfully:\n{proxies}")
 
-    user_ag = ua.random
-    total_pages = get_total_pages(url, user_ag, proxies)
+    total_pages = get_total_pages(url, proxies)
 
     print(f'Total Pages: {total_pages}')
 
@@ -124,7 +128,7 @@ def scrape(url):
         else:
             current_url = url.replace('btm', f'btm_next_{i}') + f'&pageNumber={i}'
 
-        page_scrape(current_url, proxies, user_ag)
+        page_scrape(current_url, proxies)
 
     # Convert the reviews dictionary to a pandas DataFrame
     reviews_df = pd.DataFrame(reviews)
