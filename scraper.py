@@ -7,6 +7,7 @@ import math
 import pandas as pd
 from fake_useragent import UserAgent # fake user agent library
 from random import choice
+from logo import user_input
 
 ua = UserAgent()
 reviews = {'title': [], 'rating': [], 'content': []}
@@ -137,4 +138,10 @@ def scrape(url):
     reviews_df.to_csv(addr)
     print(f'Data saved Succesfully to \n{addr}')
 
-scrape("https://www.amazon.in/Samsung-Thunder-Storage-Corning-Gorilla/product-reviews/B0D7Z8CJP8/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews")
+
+if __name__ == "__main__":
+    url = user_input()
+    scrape(url)
+
+
+# scrape("https://www.amazon.in/Samsung-Thunder-Storage-Corning-Gorilla/product-reviews/B0D7Z8CJP8/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews")
