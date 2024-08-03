@@ -9,6 +9,7 @@ from fake_useragent import UserAgent # fake user agent library
 from random import choice
 from logo import user_input
 from utils.review_url import url_maker
+import pickle
 
 ua = UserAgent()
 reviews = {'title': [], 'rating': [], 'content': []}
@@ -130,7 +131,10 @@ def get_total_pages(url, proxies):
 def scrape(url):
 
     print('url :' , url)
-    proxies = proxy_generator()
+    #proxies = proxy_generator()
+
+    with open("proxies1", "rb") as fp:
+        proxies = pickle.load(fp)
     print(f"Proxies generated successfully:\n{proxies}")
 
     total_pages = get_total_pages(url, proxies)
