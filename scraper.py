@@ -7,56 +7,15 @@ import math
 import pandas as pd
 from fake_useragent import UserAgent # fake user agent library
 from random import choice
-from logo import user_input
+from utils.logo import user_input
 from utils.review_url import url_maker
 import pickle
+import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ua = UserAgent()
 reviews = {'title': [], 'rating': [], 'content': []}
-broken = []
-
-
-def proxy_generator():
-            # URL of the website to scrape
-      proxies = []
-
-      url = 'https://sslproxies.org/'  # Replace with the actual URL
-
-      # Make a request to fetch the HTML content
-      response = requests.get(url,headers={'User-Agent': ua.random},verify = False)
-
-      print({"Proxies Table fetched Successfully"})
-
-      # Check if the request was successful
-      if response.status_code == 200:
-          # Parse the HTML content using BeautifulSoup
-          soup = BeautifulSoup(response.text, 'html.parser')
-
-          # Find the div containing the table (based on class or other attributes)
-          table_div = soup.find('div', class_='table-responsive fpl-list')
-
-          if table_div:
-              # Find all rows in the table body
-              rows = table_div.find_all('tr')[1:]  # Skipping the header row
-
-              # Extract IP addresses and ports
-              ip_port_list = []
-              for row in rows:
-                  cells = row.find_all('td')
-                  ip_address = cells[0].get_text(strip=True)
-                  port = cells[1].get_text(strip=True)
-                  ip_port_list.append((ip_address, port))
-
-              # Print the results
-              for ip, port in ip_port_list:
-                proxies.append({'http':'http://'+ip+':'+port})
-
-              return proxies
-
-          else:
-              print("Could not find the table div.")
-      else:
-          print(f"Failed to fetch the webpage. Status code: {response.status_code}")
 
 def request_wrapper(url, ua, proxies):
   proxy = choice(proxies)
@@ -66,12 +25,11 @@ def request_wrapper(url, ua, proxies):
   if (response.status_code != 200):
     raise Exception(response.raise_for_status())
 
-  print("Response fetched successfully")
+  print("Response fetched successfully \n")
   return response
 
 def page_scrape(url, proxies, cnt):
     global reviews  # Declare reviews as global to modify it
-    global broken
     pg_reviews = {'title': [], 'rating': [], 'content': []}
 
     print(f'Page URL: {url}')
@@ -85,7 +43,6 @@ def page_scrape(url, proxies, cnt):
     try:
         rvw2 = soup.find_all("div", {"class": ["a-section", "celwidget"], "id": re.compile("^customer_review-")})
     except:
-        broken.append(url)
         print ("Not able to scrape page {} (CAPTCHA is not bypassed)".format(url), flush=True)
 
     if rvw2 != []:
@@ -133,27 +90,26 @@ def get_total_pages(url, proxies):
         # The first number is total ratings, and the second is reviews with text
         total_reviews = int(text[3].replace(',',''))
 
-        print("Total reviews (all pages): {}".format(total_reviews))
+        print("Total reviews (all pages): \n{}".format(total_reviews))
 
         # Assuming 10 reviews per page
         total_pages = math.ceil(total_reviews / 10)
 
-        print(f"total pages: {total_pages}")
+        print(f"total pages: \n{total_pages}")
 
         return total_pages
 
 def scrape(url):
 
     print('url :' , url)
-    #proxies = proxy_generator()
 
-    with open("proxies_2", "rb") as fp:
+    with open("Proxies/gen_proxy", "rb") as fp:
         proxies = pickle.load(fp)
-    print(f"Proxies generated successfully:\n{proxies}")
+    print(f"Proxies loaded successfully: \n{proxies}")
 
     total_pages = get_total_pages(url, proxies)
 
-    print(f'Total Pages: {total_pages}')
+    print(f'Total Pages: \n{total_pages}')
     no_revw_cnt = 0
 
     for i in range(1, total_pages + 1):
@@ -168,13 +124,12 @@ def scrape(url):
         if no_revw_cnt >= 2:
             break
 
-    # Convert the reviews dictionary to a pandas DataFrame
-    print(f'Broken links : {broken}')
     reviews_df = pd.DataFrame(reviews)
-    print(reviews_df)
-    addr = 'Review_Data_2.csv'
+    print(f"Scraped Reviews : \n{reviews_df}")
+    addr = 'ScrapedReviews/Review_Data.csv'
     reviews_df.to_csv(addr)
     print(f'Data saved Succesfully to \n{addr}')
+    return reviews_df
 
 
 if __name__ == "__main__":
