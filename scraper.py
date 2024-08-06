@@ -69,35 +69,49 @@ def request_wrapper(url, ua, proxies):
   print("Response fetched successfully")
   return response
 
-def page_scrape(url, proxies):
+def page_scrape(url, proxies, cnt):
     global reviews  # Declare reviews as global to modify it
     global broken
+    pg_reviews = {'title': [], 'rating': [], 'content': []}
 
     print(f'Page URL: {url}')
     user_ag = ua.random
     print(f'User Agent : \n{user_ag}')
     response = request_wrapper(url, user_ag, proxies)
     soup = BeautifulSoup(response.text, "html.parser")
+
+    #print(soup.prettify(), "=="*600)
+
     try:
         rvw2 = soup.find_all("div", {"class": ["a-section", "celwidget"], "id": re.compile("^customer_review-")})
     except:
         broken.append(url)
         print ("Not able to scrape page {} (CAPTCHA is not bypassed)".format(url), flush=True)
 
-    for i in range(min(10, len(rvw2))):  # Ensure not to exceed the available reviews
-        # Title
-        title = rvw2[i].find_all("span")[3].get_text()
-        reviews['title'].append(title)
+    if rvw2 != []:
+        for i in range(min(10, len(rvw2))):  # Ensure not to exceed the available reviews
+            # Title
+            title = rvw2[i].find_all("span")[3].get_text()
+            reviews['title'].append(title)
+            pg_reviews['title'].append(title)
 
-        # Rating
-        rating = rvw2[i].find("i", {"data-hook": "review-star-rating"}).string[0]
-        reviews['rating'].append(rating)
+            # Rating
+            rating = rvw2[i].find("i", {"data-hook": "review-star-rating"}).string[0]
+            reviews['rating'].append(rating)
+            pg_reviews['rating'].append(rating)
 
-        # Content
-        content = rvw2[i].find("span", {"data-hook": "review-body"}).get_text("\n").strip()
-        reviews['content'].append(content)
+            # Content
+            content = rvw2[i].find("span", {"data-hook": "review-body"}).get_text("\n").strip()
+            reviews['content'].append(content)
+            pg_reviews['content'].append(content)
 
-    print(reviews)
+        print(pg_reviews, "**"*200)
+    
+    else:
+        cnt += 1
+        print("No reviews found for this page.")
+
+    return cnt
     
 
 def get_total_pages(url, proxies):
@@ -133,13 +147,14 @@ def scrape(url):
     print('url :' , url)
     #proxies = proxy_generator()
 
-    with open("proxies1", "rb") as fp:
+    with open("proxies_2", "rb") as fp:
         proxies = pickle.load(fp)
     print(f"Proxies generated successfully:\n{proxies}")
 
     total_pages = get_total_pages(url, proxies)
 
     print(f'Total Pages: {total_pages}')
+    no_revw_cnt = 0
 
     for i in range(1, total_pages + 1):
         time.sleep(1)
@@ -149,13 +164,15 @@ def scrape(url):
             # current_url = url.replace('btm', f'btm_next_{i}') + f'&pageNumber={i}'
             current_url = url + f'?pageNumber={i}'
 
-        page_scrape(current_url, proxies)
+        no_revw_cnt = page_scrape(current_url, proxies, no_revw_cnt)
+        if no_revw_cnt >= 2:
+            break
 
     # Convert the reviews dictionary to a pandas DataFrame
     print(f'Broken links : {broken}')
     reviews_df = pd.DataFrame(reviews)
     print(reviews_df)
-    addr = 'Review_Data_1.csv'
+    addr = 'Review_Data_2.csv'
     reviews_df.to_csv(addr)
     print(f'Data saved Succesfully to \n{addr}')
 
