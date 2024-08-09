@@ -11,11 +11,9 @@ def getProxies(file_addr):
 
     # Make a request to fetch the HTML content
     response = requests.get(url)
-    print(response)
 
     # Check if the request was successful
     if response.status_code == 200:
-        print("akshat")
         # Parse the HTML content using BeautifulSoup
         soup = BeautifulSoup(response.text, 'html.parser')
 
